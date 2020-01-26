@@ -30,6 +30,7 @@ public class SpawnManager : MonoBehaviour
         public int bossAmount;
 
         public GameObject[] pathPrefabs;
+        public GameObject[] pathPrefabsTwo;
     }
     [Header("Waves")]
     public List<Wave> waveList = new List<Wave>();
@@ -52,13 +53,25 @@ public class SpawnManager : MonoBehaviour
             {
                 spawnComplete = true;
             }
-
-            for (int i = 0; i < waveList[currentWave].pathPrefabs.Length; i++)
+            if (GameManager.instance.GetLevel() == 2)
             {
-                GameObject newPathObj = Instantiate(waveList[currentWave].pathPrefabs[i],transform.position,Quaternion.identity) as GameObject;
-                Path newPath = newPathObj.GetComponent<Path>();
-                activePathList.Add(newPath);
+                for (int i = 0; i < waveList[currentWave].pathPrefabsTwo.Length; i++)
+                {
+                    GameObject newPathObj = Instantiate(waveList[currentWave].pathPrefabsTwo[i], transform.position, Quaternion.identity) as GameObject;
+                    Path newPath = newPathObj.GetComponent<Path>();
+                    activePathList.Add(newPath);
+                }
             }
+            else
+            {
+                for (int i = 0; i < waveList[currentWave].pathPrefabs.Length; i++)
+                {
+                    GameObject newPathObj = Instantiate(waveList[currentWave].pathPrefabs[i], transform.position, Quaternion.identity) as GameObject;
+                    Path newPath = newPathObj.GetComponent<Path>();
+                    activePathList.Add(newPath);
+                }
+            }
+
             //Flies
             for (int i = 0; i < waveList[currentWave].flyAmount; i++)
             {

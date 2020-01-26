@@ -6,6 +6,9 @@ TagManager:
   tags:
   - Enemy
   - Wall
+  - Capture
+  - Powerup
+  - CapturedShip
   layers:
   - Default
   - TransparentFX

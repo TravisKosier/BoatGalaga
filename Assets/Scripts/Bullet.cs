@@ -37,7 +37,11 @@ public class Bullet : MonoBehaviour
     {
         if(target == Targets.PLAYER)
         {
-            if (col.tag == "Player")
+            if (col.tag == "Player" && gameObject.tag == "Powerup")
+            {
+                Destroy(gameObject); //Destroy without hurting player - poweruing up handed in PlayerBehavior
+            }
+            else if (col.tag == "Player")
             {
                 col.gameObject.GetComponent<PlayerBehavior>().TakeDamage(damage);
 
@@ -47,7 +51,7 @@ public class Bullet : MonoBehaviour
         
         if(target == Targets.ENEMY)
         {
-            if (col.tag == "Enemy")
+            if (col.tag == "Enemy" || col.tag == "CapturedShip")
             {
                 col.gameObject.GetComponent<EnemyBehavior>().TakeDamage(damage);
 
@@ -56,6 +60,7 @@ public class Bullet : MonoBehaviour
             if (col.tag == "Wall") // Destroy bullets when they hit the wall at the top of the screen
             {
                 Destroy(gameObject);
+                GameManager.instance.AddShotsMissed();//Hitting wall counts as missed
             }
         }
         

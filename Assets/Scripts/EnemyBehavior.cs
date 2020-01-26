@@ -36,7 +36,7 @@ public class EnemyBehavior : MonoBehaviour
     //Enemy Shots
     public GameObject bullet;
     float cur_delay;
-    float fireRate = 2f;
+    public float fireRate = 2f;
     Transform target; //Player
     public Transform spawnPoint;
     public int bulletDamage = -1; //All damage vals should be negative
@@ -44,6 +44,13 @@ public class EnemyBehavior : MonoBehaviour
     //Score
     public int inFormationScore;
     public int notInFormationScore;
+
+    //CaptureMechanic
+    public bool canCapture;
+    private bool canFireCapture;
+    //public GameObject dummyShip;
+    public bool isCapturedShip = false;
+    public GameObject powerup;
 
     void Start()
     {
@@ -91,7 +98,10 @@ public class EnemyBehavior : MonoBehaviour
         //
         if (Vector3.Distance(transform.position, formation.GetVector(enemyID)) <= 0.0001f)
         {
-            transform.SetParent(formation.gameObject.transform);
+            if (!isCapturedShip)
+            {
+                transform.SetParent(formation.gameObject.transform);
+            } 
             transform.eulerAngles = new Vector3(0,0,0);
 
             formation.enemyList.Add(new Formation.EnemyFormation(enemyID,transform.localPosition.x,transform.localPosition.z,this.gameObject));
@@ -143,14 +153,26 @@ public class EnemyBehavior : MonoBehaviour
             {
                 currentWayPointID = 0;
 
-                if (enemyState == EnemyStates.DIVE)
+                if (enemyState == EnemyStates.DIVE && canCapture)
+                {
+                    Destroy(pathToFollow.gameObject);
+                }
+                else if(enemyState == EnemyStates.DIVE && !canCapture)
                 {
                     transform.position = GameObject.Find("SpawnManager").transform.position;
-                    Destroy(pathToFollow.gameObject); 
+                    Destroy(pathToFollow.gameObject);
                 }
 
+                if (canCapture && enemyState == EnemyStates.DIVE)
+                {
+                    StartCoroutine(CapturePeriod());//Literally just idle and shoot for 5 seconds, then fly in
+                }
+                else
+                {
+
+                    enemyState = EnemyStates.FLY_IN;
+                }
                 
-                enemyState = EnemyStates.FLY_IN;
             }
         }
         else
@@ -191,7 +213,7 @@ public class EnemyBehavior : MonoBehaviour
     public void TakeDamage(int amount)
     {
         health += amount;
-        if (health<=0)
+        if (health<=0)// On kill
         {
             //Play sound
 
@@ -220,28 +242,70 @@ public class EnemyBehavior : MonoBehaviour
             }
             //Report destruction to spawn manager
             SpawnManager sp = GameObject.Find("SpawnManager").GetComponent<SpawnManager>();
-            /*for (int i = 0; i < sp.spawnedEnemies.Count; i++)
-                        {
-                            sp.spawnedEnemies.Remove(this.gameObject);
-                        }*/
             sp.UpdateSpawnedEnemies(this.gameObject);
 
             //Report destruction to game manager
             //GameManager.instance.ReduceEnemy(); //Replaced
 
+            //If ship has child object (only dummy ship)
+
+            if (transform.childCount > 1)
+            {
+                foreach (Transform child in transform)
+                {
+                    if (child.CompareTag("CapturedShip"))//If any of the children of the boss ship are a captured ship, give +1 bullet level
+                    {
+                        GameObject newPowerUp = Instantiate(powerup, new Vector3(0,0,-6), spawnPoint.rotation) as GameObject; /*Do this via spawning a 'powerup' bullet at origin, 
+                                                                                                                     so large it will undoubtedly hit the player*/
+                        GameManager.instance.IncreaseBulletLevel();
+                    }
+                }
+            }
+            
             Destroy(gameObject);
         }
     }
 
     void SpawnBullet()
     {
-        cur_delay += Time.deltaTime;
-        if (cur_delay >= fireRate && bullet != null && spawnPoint != null)
+        if (!canCapture)//Normal enemy, don't check canFireCapture
         {
-            spawnPoint.LookAt(target); //aim at target
-            GameObject newBullet = Instantiate(bullet, spawnPoint.position,spawnPoint.rotation) as GameObject;
-            newBullet.GetComponent<Bullet>().SetDamage(bulletDamage);
-            cur_delay = 0;
+            cur_delay += Time.deltaTime;
+            if (cur_delay >= fireRate && bullet != null && spawnPoint != null)
+            {
+                spawnPoint.LookAt(target); //aim at target
+                GameObject newBullet = Instantiate(bullet, spawnPoint.position, spawnPoint.rotation) as GameObject;
+                newBullet.GetComponent<Bullet>().SetDamage(bulletDamage);
+                cur_delay = 0;
+            }
+        }
+        else//Boss capture shot
+        {
+            cur_delay += Time.deltaTime;
+            if (cur_delay >= fireRate && bullet != null && spawnPoint != null && canFireCapture)
+            {
+                spawnPoint.LookAt(target); //aim at target
+                GameObject newBullet = Instantiate(bullet, spawnPoint.position, spawnPoint.rotation) as GameObject;
+                newBullet.GetComponent<Bullet>().SetDamage(bulletDamage);
+                newBullet.transform.parent = this.gameObject.transform; //Make bullet child of ship that fired it
+                cur_delay = 0;
+            }
         }
     }
+
+    IEnumerator CapturePeriod()
+    {
+        enemyState = EnemyStates.IDLE;
+        canFireCapture = true;
+        yield return new WaitForSeconds(2);
+        canFireCapture = false;
+        enemyState = EnemyStates.FLY_IN;
+    }
+    /*
+    public void SpawnCapturedShip()
+    {
+        GameObject newDummyShip = Instantiate(dummyShip, spawnPoint.position, spawnPoint.rotation) as GameObject; //Spawn dummy ship object
+        newDummyShip.transform.parent = this.gameObject.transform.parent; //Make dummy ship child of ship that fired bullet
+        //Get dummyship to fly in
+    }*/
 }

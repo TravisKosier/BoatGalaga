@@ -11,10 +11,13 @@ public class GameManager : MonoBehaviour
     static int level = 1; //Current level
     static int score;
     static int lives = 3;
+    static int shotsFired;
+    static int shotsMissed;
+    static int bulletLevel = 1;
 
     int enemyAmount;
 
-    int scoreToBonusLife = 10000;
+    int scoreToBonusLife = 30000;
 
     static int bonusScore;
     static bool hasLost;
@@ -37,6 +40,7 @@ public class GameManager : MonoBehaviour
             lives = 3;
             bonusScore = 0;
             hasLost = false;
+            bulletLevel = 1;
         }
     }
 
@@ -57,8 +61,19 @@ public class GameManager : MonoBehaviour
         if (bonusScore>=scoreToBonusLife)
         {
             lives++;
+            UiScript.instance.UpdateLivesText(lives); //Update UI Value
             bonusScore %= scoreToBonusLife;
         }
+    }
+
+    public void AddShotsFired()
+    {
+        shotsFired++;
+    }
+
+    public void AddShotsMissed()
+    {
+        shotsMissed++;
     }
 
     public void DecreaseLives()
@@ -72,6 +87,8 @@ public class GameManager : MonoBehaviour
             //Game over
             ScoreHolder.level = level;
             ScoreHolder.score = score;
+            ScoreHolder.shotsFired = shotsFired;
+            ScoreHolder.shotsMissed = shotsMissed;
             hasLost = true;
             SceneManager.LoadScene("GameOver");
         }
@@ -80,6 +97,33 @@ public class GameManager : MonoBehaviour
     public void WinCondition()
     {
         level++;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        if (level >= 3)//Have over, kill player, take to 'win' version of end screen
+        {
+            ScoreHolder.lives = lives; //Keep track of remaining lives
+            lives = 0;
+            DecreaseLives();
+        }
+        else
+        {
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        }
+    }
+
+    public int getBulletLevel()
+    {
+        return bulletLevel;
+    }
+
+    public void IncreaseBulletLevel()
+    {
+        if (bulletLevel == 1)
+        {
+            bulletLevel++;
+        } 
+    }
+
+    public int GetLevel()
+    {
+        return level;
     }
 }

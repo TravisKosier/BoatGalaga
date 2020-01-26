@@ -40,11 +40,18 @@ public class PlayerBehavior : MonoBehaviour
     public Boundary boundary;
     public float tilt;
 
+    //Capture nonsense
+    public GameObject dummyShip;
+    private int dummyCounter = 0;
+    public Path path;
+    public Formation form;
+
     // Start is called before the first frame update
     void Start()
     {
         initPosition = transform.position;
         rb = GetComponent<Rigidbody>();
+        bulletLevel = GameManager.instance.getBulletLevel();
     }
 
     // Update is called once per frame
@@ -56,6 +63,7 @@ public class PlayerBehavior : MonoBehaviour
             for (int i = 0; i < bulletLevel; i++)
             {
                 GameObject newBullet = Instantiate(bullet, bulletSpawns[i].position, bulletSpawns[i].rotation) as GameObject;
+                GameManager.instance.AddShotsFired(); //Track bullets fired
                 //Deal damage with bullet
                 newBullet.GetComponent<Bullet>().SetDamage(bulletDamage);
             }
@@ -88,9 +96,9 @@ public class PlayerBehavior : MonoBehaviour
     void FixedUpdate()
     {
         float moveHorizontal = Input.GetAxis("Horizontal");
-        float moveVertical = Input.GetAxis("Vertical");
+        //float moveVertical = Input.GetAxis("Vertical");
 
-        Vector3 movement = new Vector3(moveHorizontal, 0.0f, moveVertical);
+        Vector3 movement = new Vector3(moveHorizontal, 0.0f, 0.0f);
         rb.velocity = movement * speed;
 
         rb.position = new Vector3
@@ -126,6 +134,7 @@ public class PlayerBehavior : MonoBehaviour
     IEnumerator Reset() //Remove ship from board, and 'respawn'
     {
         GameManager.instance.DecreaseLives();
+        bulletLevel = 1;
         GetComponent<MeshRenderer>().enabled = false;
         GetComponent<Collider>().enabled = false;
 
@@ -146,5 +155,27 @@ public class PlayerBehavior : MonoBehaviour
         {
             TakeDamage(-10); //Remember damage is negative
         }
+        if (col.CompareTag("Capture"))
+        {
+            SpawnCapturedShip(col);
+            UiScript.instance.ShowCaptureText(); //Show captured text
+            TakeDamage(-10); //Kill player ship, lose life, reset
+        }
+        if (col.CompareTag("Powerup"))
+        {
+            if (bulletLevel == 1) { bulletLevel++; }
+        }
+    }
+
+    public void SpawnCapturedShip(Collider col) //When player is hit by capture bullet, spawn dummy ship
+    {
+        GameObject newDummyShip = Instantiate(dummyShip, col.gameObject.transform.position, col.gameObject.transform.rotation) as GameObject; //Spawn dummy ship object
+        newDummyShip.transform.SetParent(col.gameObject.transform.parent); //Make dummy ship child of ship that fired bullet
+        dummyCounter++;
+        newDummyShip.GetComponent<EnemyBehavior>().pathToFollow = path;
+        newDummyShip.GetComponent<EnemyBehavior>().enemyID = dummyCounter;
+        newDummyShip.GetComponent<EnemyBehavior>().formation = form;
+        UiScript.instance.ShowCaptureText();
+        //transform.SetParent(transform.parent);
     }
 }

@@ -107,10 +107,14 @@ MonoBehaviour:
   health: 2
   fx_Explosion: {fileID: 0}
   bullet: {fileID: 2958537708182690532, guid: 766808520fcfc2948b541ba96ac75c26, type: 3}
+  fireRate: 2
   spawnPoint: {fileID: 4117201343961359957}
   bulletDamage: -1
   inFormationScore: 50
   notInFormationScore: 100
+  canCapture: 0
+  isCapturedShip: 0
+  powerup: {fileID: 3583397933448940978, guid: 05184d0eda240464795d52121b927b91, type: 3}
 --- !u!135 &8070216746321139674
 SphereCollider:
   m_ObjectHideFlags: 0
